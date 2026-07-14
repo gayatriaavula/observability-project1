@@ -4,7 +4,7 @@
 # the manifests in k8s/base. Requires: helm, kubectl pointed at the cluster.
 set -euo pipefail
 
-ISTIO_VERSION="${ISTIO_VERSION:-1.22.2}"
+ISTIO_VERSION="${ISTIO_VERSION:-1.30.2}"
 
 helm repo add istio https://istio-release.storage.googleapis.com/charts
 helm repo update

@@ -6,7 +6,9 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  azs = slice(data.aws_availability_zones.available.names, 0, 3)
+  # us-east-1a is excluded: this account already has other, unrelated VPCs
+  # sitting at the NAT-gateway-per-AZ quota there.
+  azs = slice([for az in data.aws_availability_zones.available.names : az if az != "us-east-1a"], 0, 3)
 }
 
 module "vpc" {
@@ -16,8 +18,11 @@ module "vpc" {
   name = "${var.cluster_name}-vpc"
   cidr = "10.0.0.0/16"
 
-  azs             = local.azs
-  private_subnets = ["10.0.0.0/19", "10.0.32.0/19", "10.0.64.0/19"]
+  azs = local.azs
+  # Private subnets use fresh, non-overlapping ranges (not 10.0.0.0/19 etc.)
+  # because this module replaces subnets create-before-destroy: reusing the
+  # old CIDRs collides with the still-existing old subnets during replacement.
+  private_subnets = ["10.0.160.0/19", "10.0.192.0/19", "10.0.224.0/19"]
   public_subnets  = ["10.0.96.0/20", "10.0.112.0/20", "10.0.128.0/20"]
 
   enable_nat_gateway   = true

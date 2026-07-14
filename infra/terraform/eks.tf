@@ -34,3 +34,18 @@ module "eks" {
     Application = "orders-backend"
   }
 }
+
+# The EKS module's default node security group rules cover the generic
+# webhook ports several admission controllers use (443, 4443, 6443, 8443,
+# 9443) but not istiod's webhook, which listens on 15017. Without this, the
+# API server times out calling the sidecar-injector and validation webhooks
+# and pods in injected namespaces never get created.
+resource "aws_security_group_rule" "node_istiod_webhook" {
+  description              = "Cluster API to istiod webhook (15017)"
+  type                     = "ingress"
+  from_port                = 15017
+  to_port                  = 15017
+  protocol                 = "tcp"
+  security_group_id        = module.eks.node_security_group_id
+  source_security_group_id = module.eks.cluster_security_group_id
+}
