@@ -71,7 +71,9 @@ jobs:
 
       - name: Install kustomize
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash -s -- 5.4.1 /usr/local/bin
+          command -v kustomize >/dev/null || \
+            curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash -s -- 5.4.1 /usr/local/bin
+          kustomize version
 
       - name: Point k8s/base at the new image
         working-directory: k8s/base
