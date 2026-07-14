@@ -1,0 +1,134 @@
+# Auto-discovered by the Grafana sidecar (grafana.sidecar.dashboards,
+# NAMESPACE=ALL) via the grafana_dashboard=1 label -- no manual import needed.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-orders-backend
+  namespace: orders-backend
+  labels:
+    grafana_dashboard: "1"
+data:
+  orders-backend.json: |
+    {
+      "title": "Orders Backend",
+      "uid": "orders-backend",
+      "tags": ["orders-backend"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Order creation rate",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "reqps", "custom": { "fillOpacity": 15 } }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(orders_created_total{job=\"orders-service\"}[5m]))",
+              "legendFormat": "orders/sec"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Request rate by status code",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "reqps", "custom": { "fillOpacity": 15, "stacking": { "mode": "normal" } } }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_request_duration_seconds_count{job=\"orders-service\"}[5m])) by (status_code)",
+              "legendFormat": "{{status_code}}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "p50 / p95 / p99 request latency",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "fieldConfig": {
+            "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } }
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"orders-service\"}[5m])) by (le))",
+              "legendFormat": "p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"orders-service\"}[5m])) by (le))",
+              "legendFormat": "p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"orders-service\"}[5m])) by (le))",
+              "legendFormat": "p99"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "5xx error rate",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "fieldConfig": {
+            "defaults": { "unit": "percentunit", "custom": { "fillOpacity": 15 }, "max": 1, "min": 0 }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_request_duration_seconds_count{job=\"orders-service\", status_code=~\"5..\"}[5m])) / sum(rate(http_request_duration_seconds_count{job=\"orders-service\"}[5m]))",
+              "legendFormat": "5xx ratio"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Pods running",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+          "targets": [
+            {
+              "expr": "count(up{job=\"orders-service\"} == 1)"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Targets up",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 16 },
+          "fieldConfig": {
+            "defaults": { "thresholds": { "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ] } }
+          },
+          "targets": [
+            {
+              "expr": "min(up{job=\"orders-service\"})"
+            }
+          ]
+        }
+      ]
+    }

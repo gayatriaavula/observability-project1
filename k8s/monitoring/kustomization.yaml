@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - servicemonitor-orders-backend.yaml
   - prometheusrule-orders-backend.yaml
+  - grafana-dashboard-orders-backend.yaml
