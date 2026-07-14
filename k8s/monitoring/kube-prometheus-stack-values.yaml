@@ -11,11 +11,18 @@ alertmanager:
     receivers:
       - name: "slack"
         slack_configs:
-          # Store the webhook URL as a Kubernetes Secret and reference it here
-          # (see alertmanagerSpec.secrets below) -- never commit it in plaintext.
-          - api_url: "https://hooks.slack.com/services/REPLACE/ME/PLACEHOLDER"
+          # Read from the mounted Secret below rather than a plaintext value
+          # here, so the real webhook URL never has to be committed to git.
+          # Create it once per cluster:
+          #   kubectl create secret generic alertmanager-slack-webhook \
+          #     -n monitoring --from-literal=url=https://hooks.slack.com/services/...
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-slack-webhook/url
             channel: "#orders-alerts"
             send_resolved: true
+      # Required by the chart's own default Watchdog-silencing route, which
+      # this values file otherwise overrides; omitting it fails validation
+      # with "undefined receiver 'null' used in route".
+      - name: "null"
   alertmanagerSpec:
     secrets:
       - alertmanager-slack-webhook

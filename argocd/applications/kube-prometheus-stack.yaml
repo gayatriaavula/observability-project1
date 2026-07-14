@@ -15,6 +15,7 @@ spec:
       chart: kube-prometheus-stack
       targetRevision: "61.x"
       helm:
+        skipCrds: true
         valueFiles:
           - $values/k8s/monitoring/kube-prometheus-stack-values.yaml
     - repoURL: https://github.com/gayatriaavula/observability-project1.git
@@ -32,6 +33,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
       # The prometheus-operator CRDs (Prometheus, Alertmanager, etc.) exceed
-      # the 262144-byte last-applied-configuration annotation limit that
-      # client-side apply enforces; server-side apply avoids that annotation.
+      # the 262144-byte annotation limit under Argo CD's own apply path, so
+      # they're installed once directly (kubectl apply --server-side) instead
+      # of through this Application -- see README. skipCrds above keeps this
+      # release from fighting that out-of-band install.
       - ServerSideApply=true
