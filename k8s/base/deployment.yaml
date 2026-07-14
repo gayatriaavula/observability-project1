@@ -59,6 +59,11 @@ spec:
                 command: ["sh", "-c", "sleep 5"]
           securityContext:
             runAsNonRoot: true
+            # node:20-alpine's "node" user is UID/GID 1000, but Kubernetes
+            # can't verify a non-numeric USER directive as non-root, so it
+            # must be given explicitly here.
+            runAsUser: 1000
+            runAsGroup: 1000
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
