@@ -1,0 +1,39 @@
+# Helm values for prometheus-community/kube-prometheus-stack, deployed via
+# the Argo CD Application in argocd/applications/monitoring.yaml.
+alertmanager:
+  config:
+    route:
+      receiver: "slack"
+      group_by: ["alertname", "namespace"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 3h
+    receivers:
+      - name: "slack"
+        slack_configs:
+          # Store the webhook URL as a Kubernetes Secret and reference it here
+          # (see alertmanagerSpec.secrets below) -- never commit it in plaintext.
+          - api_url: "https://hooks.slack.com/services/REPLACE/ME/PLACEHOLDER"
+            channel: "#orders-alerts"
+            send_resolved: true
+  alertmanagerSpec:
+    secrets:
+      - alertmanager-slack-webhook
+
+grafana:
+  adminPassword: "" # supply via --set or a sealed secret at install time; do not commit
+  defaultDashboardsEnabled: true
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    # Only scrape ServiceMonitors we explicitly label, rather than every
+    # ServiceMonitor cluster-wide.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector:
+      matchLabels:
+        release: kube-prometheus-stack
+    ruleSelectorNilUsesHelmValues: false
+    ruleSelector:
+      matchLabels:
+        release: kube-prometheus-stack

@@ -1,0 +1,10 @@
+# Requires mTLS for every connection between Envoy sidecars in this
+# namespace -- plaintext traffic to orders-backend pods is rejected.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: orders-backend
+spec:
+  mtls:
+    mode: STRICT

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-service
+  namespace: orders-backend
+  labels:
+    app: orders-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: orders-backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

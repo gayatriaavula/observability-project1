@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: orders-backend
+  namespace: orders-backend
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: orders-backend
+  namespaceSelector:
+    matchNames:
+      - orders-backend
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

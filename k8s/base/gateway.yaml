@@ -1,0 +1,22 @@
+# Binds to the Envoy proxies running in the istio-ingressgateway Deployment
+# (namespace: istio-ingress) and tells them which host/port/cert to accept.
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: orders-gateway
+  namespace: orders-backend
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        # Create this TLS secret in istio-ingress ahead of time, e.g. via
+        # cert-manager or `kubectl create secret tls`.
+        credentialName: api-company-com-tls
+      hosts:
+        - "api.company.com"

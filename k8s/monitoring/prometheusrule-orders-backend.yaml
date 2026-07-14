@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: orders-backend
+  namespace: orders-backend
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: orders-backend.rules
+      rules:
+        - alert: OrdersBackendHighErrorRate
+          expr: |
+            sum(rate(http_request_duration_seconds_count{job="orders-backend", status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_request_duration_seconds_count{job="orders-backend"}[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "orders-backend 5xx error rate above 5%"
+            description: "More than 5% of requests to orders-backend have returned 5xx over the last 5 minutes."
+
+        - alert: OrdersBackendHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="orders-backend"}[5m])) by (le)
+            ) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "orders-backend p95 latency above 1s"
+            description: "95th percentile request latency for orders-backend has exceeded 1s for 5 minutes."
+
+        - alert: OrdersBackendPodsBelowMinAvailable
+          expr: |
+            kube_deployment_status_replicas_available{deployment="orders-backend", namespace="orders-backend"} < 2
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "orders-backend has fewer than 2 available replicas"
+            description: "The PodDisruptionBudget minimum of 2 available replicas is being violated."

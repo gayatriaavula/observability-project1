@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: orders-backend
+  namespace: orders-backend
+spec:
+  hosts:
+    - "api.company.com"
+  gateways:
+    - orders-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /orders
+      route:
+        - destination:
+            host: orders-service.orders-backend.svc.cluster.local
+            port:
+              number: 80
+      retries:
+        attempts: 2
+        perTryTimeout: 2s
+        retryOn: 5xx,reset,connect-failure
+      timeout: 5s

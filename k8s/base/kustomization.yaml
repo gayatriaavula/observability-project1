@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - configmap.yaml
+  - secret.yaml
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+  - pdb.yaml
+  - gateway.yaml
+  - virtualservice.yaml
+  - destinationrule.yaml
+  - peerauthentication.yaml
+
+# CI overwrites the tag on every build (see .github/workflows/ci-cd.yml),
+# committing the change so Argo CD picks it up and syncs the new image.
+images:
+  - name: orders-backend
+    newName: orders-backend
+    newTag: latest

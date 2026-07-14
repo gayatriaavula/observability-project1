@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-backend
+  namespace: orders-backend
+  labels:
+    app: orders-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: orders-backend
+  template:
+    metadata:
+      labels:
+        app: orders-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: orders-backend
+      # Gives in-flight requests time to drain through the Envoy sidecar
+      # before the sidecar itself is torn down on pod termination.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: orders-backend
+          image: orders-backend:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: orders-backend-config
+            - secretRef:
+                name: orders-backend-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
