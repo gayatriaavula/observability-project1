@@ -28,7 +28,15 @@ alertmanager:
       - alertmanager-slack-webhook
 
 grafana:
-  adminPassword: "" # supply via --set or a sealed secret at install time; do not commit
+  # An empty/unset adminPassword makes the chart generate a new random
+  # password (and restart Grafana) on every sync. Point it at a stable
+  # Secret created once per cluster instead:
+  #   kubectl create secret generic grafana-admin-credentials -n monitoring \
+  #     --from-literal=admin-user=admin --from-literal=admin-password=...
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: admin-user
+    passwordKey: admin-password
   defaultDashboardsEnabled: true
 
 prometheus:
