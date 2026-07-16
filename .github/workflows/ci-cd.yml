@@ -8,8 +8,8 @@ on:
       - ".github/workflows/ci-cd.yml"
 
 permissions:
-  id-token: write   # required to assume the AWS role via OIDC
-  contents: write    # required to commit the updated image tag back to git
+  id-token: write  # required to assume the AWS role via OIDC
+  contents: read   # manifest updates go to observability-project1-gitops via GITOPS_PAT, not this repo's GITHUB_TOKEN
 
 env:
   AWS_REGION: us-east-1
@@ -65,9 +65,16 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      # k8s manifests live in the separate observability-project1-gitops repo
+      # (see that repo's applications/orders-backend.yaml), not here. GITOPS_PAT
+      # is a fine-grained PAT scoped to write access on that repo only -- add it
+      # under Settings -> Secrets and variables -> Actions in THIS repo.
       - uses: actions/checkout@v4
         with:
+          repository: gayatriaavula/observability-project1-gitops
           ref: main
+          token: ${{ secrets.GITOPS_PAT }}
+          path: gitops
 
       - name: Install kustomize
         run: |
@@ -76,11 +83,12 @@ jobs:
           kustomize version
 
       - name: Point k8s/base at the new image
-        working-directory: k8s/base
+        working-directory: gitops/k8s/base
         run: |
           kustomize edit set image "orders-backend=${{ needs.build-and-push.outputs.image }}"
 
       - name: Commit and push the manifest update
+        working-directory: gitops
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
