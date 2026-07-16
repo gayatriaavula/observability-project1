@@ -12,10 +12,15 @@ output "configure_kubectl" {
 }
 
 output "ecr_repository_url" {
-  value = aws_ecr_repository.orders_backend.repository_url
+  value = module.ecr.repository_url
 }
 
 output "github_actions_role_arn" {
   description = "Put this in the GitHub Actions workflow / repo variables as AWS_ROLE_ARN"
-  value       = aws_iam_role.github_actions.arn
+  value       = module.github_oidc.role_arn
+}
+
+output "terraform_ci_role_arn" {
+  description = "Put this in the repo's Actions variables as TERRAFORM_CI_ROLE_ARN_PROD (see .github/workflows/infra.yml)"
+  value       = module.terraform_ci_role.role_arn
 }

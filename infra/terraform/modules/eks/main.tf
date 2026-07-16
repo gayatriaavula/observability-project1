@@ -5,12 +5,11 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
 
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
+  vpc_id     = var.vpc_id
+  subnet_ids = var.subnet_ids
 
-  # Public access is convenient for a demo/first deployment; restrict
-  # cluster_endpoint_public_access_cidrs to your office/VPN CIDR in production.
-  cluster_endpoint_public_access = true
+  cluster_endpoint_public_access       = var.cluster_endpoint_public_access
+  cluster_endpoint_public_access_cidrs = var.cluster_endpoint_public_access_cidrs
 
   enable_cluster_creator_admin_permissions = true
 
@@ -24,15 +23,13 @@ module "eks" {
       min_size       = var.node_min_size
       max_size       = var.node_max_size
       desired_size   = var.node_desired_size
-      capacity_type  = "ON_DEMAND"
+      capacity_type  = var.node_capacity_type
     }
   }
 
   # istiod's mutating webhook and the Prometheus/Grafana stack both need
   # room to schedule alongside your application pods.
-  cluster_tags = {
-    Application = "orders-backend"
-  }
+  cluster_tags = var.tags
 }
 
 # The EKS module's default node security group rules cover the generic
