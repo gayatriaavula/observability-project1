@@ -20,4 +20,4 @@ echo
 echo "Port-forward the UI with:"
 echo "  kubectl -n argocd port-forward svc/argocd-server 8080:443"
 echo
-echo "Then apply argocd/applications/orders-backend.yaml to register this repo."
+echo "Then clone observability-project1-gitops and apply its root-app.yaml to register this repo."

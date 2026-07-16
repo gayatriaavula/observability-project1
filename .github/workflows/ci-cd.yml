@@ -92,6 +92,7 @@ jobs:
             git push origin main
           fi
 
-      # Argo CD (auto-sync + self-heal, see argocd/applications/orders-backend.yaml)
-      # detects this commit and rolls the new image out to the cluster on its
-      # own polling interval -- no further action needed here.
+      # Argo CD (auto-sync + self-heal, see applications/orders-backend.yaml in
+      # the observability-project1-gitops repo) detects this commit and rolls
+      # the new image out to the cluster on its own polling interval -- no
+      # further action needed here.

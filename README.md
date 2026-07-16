@@ -11,9 +11,15 @@ infra/terraform/      VPC + EKS + ECR + GitHub OIDC role (Terraform)
 infra/bootstrap/      one-time shell scripts: install Istio, install Argo CD
 k8s/base/             Deployment, Service, HPA, PDB, Gateway, VirtualService, mTLS
 k8s/monitoring/       ServiceMonitor + PrometheusRule for orders-backend
-argocd/               Argo CD Application manifests (GitOps registration)
 .github/workflows/    CI: test -> build -> push to ECR -> update manifest
 ```
+
+Argo CD's own Application manifests (the "app of apps" root + the three
+Applications it manages) live in a separate repo,
+[observability-project1-gitops](https://github.com/gayatriaavula/observability-project1-gitops),
+not here. Those Applications still point their `repoURL`/`path` back at this
+repo's `k8s/base` and `k8s/monitoring` — only the Argo CD registration layer
+is split out.
 
 ## What you need before starting
 
@@ -56,7 +62,9 @@ or `kubectl create secret tls`) before the Gateway can serve HTTPS.
 ## 3. Wire up GitHub
 
 This repo is wired to https://github.com/gayatriaavula/observability-project1 —
-the Argo CD Application manifests already point `repoURL` there.
+the Argo CD Application manifests (in the separate
+[observability-project1-gitops](https://github.com/gayatriaavula/observability-project1-gitops)
+repo) already point `repoURL` here for `k8s/base` and `k8s/monitoring`.
 
 In your GitHub repo settings:
 - **Settings → Secrets and variables → Actions → Variables**: add `AWS_ROLE_ARN`
@@ -69,16 +77,21 @@ Push this repo to `github.com/gayatriaavula/observability-project1`.
 
 ## 4. Register the apps with Argo CD
 
+`root-app.yaml` and the three Application manifests live in
+[observability-project1-gitops](https://github.com/gayatriaavula/observability-project1-gitops),
+not this repo. Clone that repo and apply its root Application once:
+
 ```bash
-kubectl apply -f argocd/root-app.yaml
+git clone https://github.com/gayatriaavula/observability-project1-gitops.git
+kubectl apply -f observability-project1-gitops/root-app.yaml
 ```
 
 This one command (the "app of apps" pattern) makes Argo CD discover and
 create the three real Applications — `orders-backend`, `kube-prometheus-stack`,
-and `orders-backend-monitoring` — and sync them automatically with
-`prune: true` / `selfHeal: true`, meaning git is the single source of truth:
-any manual `kubectl edit` against the cluster gets reverted back to what's
-committed.
+and `orders-backend-monitoring`, defined in that repo's `applications/`
+directory — and sync them automatically with `prune: true` / `selfHeal: true`,
+meaning git is the single source of truth: any manual `kubectl edit` against
+the cluster gets reverted back to what's committed.
 
 ## 5. Ship a change
 
@@ -106,7 +119,7 @@ trigger, Argo CD is the only thing that talks to the cluster.
 | Gateway Configuration / VirtualService | `k8s/base/gateway.yaml`, `k8s/base/virtualservice.yaml` |
 | orders-backend Deployment, HPA, PDB | `k8s/base/deployment.yaml`, `hpa.yaml`, `pdb.yaml` |
 | mTLS between pods | `k8s/base/peerauthentication.yaml` (STRICT) + `destinationrule.yaml` (ISTIO_MUTUAL) |
-| Prometheus / Grafana / Alertmanager | `argocd/applications/kube-prometheus-stack.yaml` (Helm chart) |
+| Prometheus / Grafana / Alertmanager | `applications/kube-prometheus-stack.yaml` in observability-project1-gitops (Helm chart) |
 | Metrics scraping | `k8s/monitoring/servicemonitor-orders-backend.yaml` |
 | Alerts → Slack | `k8s/monitoring/kube-prometheus-stack-values.yaml` (Alertmanager Slack receiver) |
 

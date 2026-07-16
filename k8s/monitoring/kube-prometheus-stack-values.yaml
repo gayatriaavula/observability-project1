@@ -1,5 +1,6 @@
 # Helm values for prometheus-community/kube-prometheus-stack, deployed via
-# the Argo CD Application in argocd/applications/monitoring.yaml.
+# the Argo CD Application in applications/kube-prometheus-stack.yaml in the
+# observability-project1-gitops repo.
 alertmanager:
   config:
     route:
