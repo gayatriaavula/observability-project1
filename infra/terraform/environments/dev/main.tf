@@ -52,6 +52,14 @@ module "ecr" {
   tags = local.tags
 }
 
+# Installed as soon as the cluster is up -- see the helm provider block in
+# versions.tf for how this authenticates without a manual kubeconfig step.
+module "argocd" {
+  source = "../../modules/argocd"
+
+  depends_on = [module.eks]
+}
+
 module "github_oidc" {
   source = "../../modules/github-oidc"
 

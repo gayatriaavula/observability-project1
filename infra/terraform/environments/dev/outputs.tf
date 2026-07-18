@@ -15,6 +15,11 @@ output "ecr_repository_url" {
   value = module.ecr.repository_url
 }
 
+output "argocd_initial_admin_password_command" {
+  description = "Argo CD is installed by this apply (module.argocd) -- run this after configure_kubectl to fetch its initial admin password"
+  value       = "kubectl -n ${module.argocd.namespace} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+}
+
 output "github_actions_role_arn" {
   description = "Put this in the GitHub Actions workflow / repo variables as AWS_ROLE_ARN"
   value       = module.github_oidc.role_arn
