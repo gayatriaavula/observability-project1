@@ -24,7 +24,21 @@ env:
   TF_VERSION: "1.15.7"
 
 jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan Terraform for misconfigurations
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: "config"
+          scan-ref: "infra/terraform"
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+
   plan:
+    needs: scan
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     strategy:
@@ -103,6 +117,7 @@ jobs:
             }
 
   apply:
+    needs: scan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     strategy:
