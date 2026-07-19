@@ -61,6 +61,12 @@ variable "node_desired_size" {
   default = 1
 }
 
+variable "cluster_endpoint_public_access_cidrs" {
+  description = "CIDR blocks allowed to reach the public EKS API endpoint"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "github_repo" {
   description = "GitHub repo allowed to assume the CI role, in \"org/repo\" form"
   type        = string

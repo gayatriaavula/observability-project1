@@ -1,0 +1,17 @@
+# Node security group egress (terraform-aws-modules/eks/aws/node_groups.tf,
+# resource "egress_all"): worker nodes need broad outbound access to pull
+# container images from ECR/DockerHub, reach the EKS/STS/ECR APIs, and
+# resolve DNS. Properly restricting this requires VPC endpoints for every
+# AWS service the nodes call plus a registry IP allowlist -- accepted as a
+# known risk for this cluster rather than undertaken here.
+AWS-0104
+
+# EKS API endpoint (terraform-aws-modules/eks/aws): this rule wants the
+# endpoint fully private (no public CIDR at all), which would require a
+# VPN/bastion host to reach it -- out of scope for this cluster. We already
+# restrict cluster_endpoint_public_access_cidrs to a single operator /32
+# (see environments/*/terraform.tfvars) instead of leaving it at the
+# module's 0.0.0.0/0 default; the rule still flags any public CIDR, however
+# narrow.
+AWS-0040
+AWS-0041

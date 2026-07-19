@@ -10,3 +10,7 @@ create_github_oidc_provider = false
 # gateway + Argo CD + kube-prometheus-stack + app pods all at once -- bump to
 # the existing max_size of 2 so Prometheus/Alertmanager can schedule.
 node_desired_size = 2
+
+# Restrict the public EKS API endpoint to the current operator's IP instead
+# of 0.0.0.0/0 (Trivy AWS-0041). Update this if your public IP changes.
+cluster_endpoint_public_access_cidrs = ["174.163.160.69/32"]
