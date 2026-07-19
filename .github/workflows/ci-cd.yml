@@ -27,8 +27,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app/package-lock.json
 
       - run: npm install
+      - run: npm run lint
+      - run: npm audit --audit-level=high
       - run: npm test
 
   build-and-push:
@@ -49,7 +53,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push image
+      - name: Build image
         id: image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -58,16 +62,26 @@ jobs:
         run: |
           IMAGE_URI="$REGISTRY/${{ env.ECR_REPOSITORY }}:$TAG"
           docker build -t "$IMAGE_URI" .
-          docker push "$IMAGE_URI"
           echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ steps.image.outputs.image }}
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Push image
+        run: docker push ${{ steps.image.outputs.image }}
 
   update-manifest:
     needs: build-and-push
     runs-on: ubuntu-latest
-    # GITOPS_PAT can't push to observability-project1-gitops yet (still being
-    # debugged) -- deploys are happening manually in the meantime, so this
-    # job's failure shouldn't turn the whole run red.
-    continue-on-error: true
+    # Gated by a GitHub Environment protection rule -- add required reviewers
+    # to the "orders-backend-deploy" environment in repo Settings so this
+    # pauses for approval instead of deploying immediately after build.
+    environment: orders-backend-deploy
     steps:
       # k8s manifests live in the separate observability-project1-gitops repo
       # (see that repo's applications/orders-backend.yaml), not here. GITOPS_PAT
