@@ -1,6 +1,6 @@
 {
   "name": "orders-backend",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Orders API running behind Istio on EKS",
   "main": "src/index.js",
   "type": "commonjs",
