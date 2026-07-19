@@ -20,13 +20,25 @@ resource "aws_s3_bucket_versioning" "tfstate" {
   }
 }
 
+resource "aws_kms_key" "tfstate" {
+  description         = "Encrypts the Terraform state bucket (${var.state_bucket_name})"
+  enable_key_rotation = true
+}
+
+resource "aws_kms_alias" "tfstate" {
+  name          = "alias/${var.state_bucket_name}"
+  target_key_id = aws_kms_key.tfstate.key_id
+}
+
 resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.tfstate.arn
     }
+    bucket_key_enabled = true
   }
 }
 
