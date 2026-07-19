@@ -64,6 +64,10 @@ jobs:
   update-manifest:
     needs: build-and-push
     runs-on: ubuntu-latest
+    # GITOPS_PAT can't push to observability-project1-gitops yet (still being
+    # debugged) -- deploys are happening manually in the meantime, so this
+    # job's failure shouldn't turn the whole run red.
+    continue-on-error: true
     steps:
       # k8s manifests live in the separate observability-project1-gitops repo
       # (see that repo's applications/orders-backend.yaml), not here. GITOPS_PAT
