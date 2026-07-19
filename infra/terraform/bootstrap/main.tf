@@ -39,6 +39,74 @@ resource "aws_s3_bucket_public_access_block" "tfstate" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_policy" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.tfstate.arn,
+          "${aws_s3_bucket.tfstate.arn}/*",
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Dedicated bucket for the state bucket's own access logs -- a bucket can't
+# log to itself.
+resource "aws_s3_bucket" "tfstate_logs" {
+  bucket = "${var.state_bucket_name}-logs"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "tfstate_logs" {
+  bucket = aws_s3_bucket.tfstate_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# S3's log delivery group needs ACL support enabled on the target bucket to
+# write access logs into it.
+resource "aws_s3_bucket_ownership_controls" "tfstate_logs" {
+  bucket = aws_s3_bucket.tfstate_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "tfstate_logs" {
+  depends_on = [aws_s3_bucket_ownership_controls.tfstate_logs]
+
+  bucket = aws_s3_bucket.tfstate_logs.id
+  acl    = "log-delivery-write"
+}
+
+resource "aws_s3_bucket_logging" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+
+  target_bucket = aws_s3_bucket.tfstate_logs.id
+  target_prefix = "tfstate-access-logs/"
+}
+
 resource "aws_dynamodb_table" "tfstate_lock" {
   name         = var.lock_table_name
   billing_mode = "PAY_PER_REQUEST"

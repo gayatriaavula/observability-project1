@@ -7,10 +7,6 @@ on:
       - "app/**"
       - ".github/workflows/ci-cd.yml"
 
-permissions:
-  id-token: write  # required to assume the AWS role via OIDC
-  contents: read   # manifest updates go to observability-project1-gitops via GITOPS_PAT, not this repo's GITHUB_TOKEN
-
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: orders-backend-dev
@@ -18,13 +14,15 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
           cache: "npm"
@@ -38,20 +36,23 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # required to assume the AWS role via OIDC
+      contents: read
     outputs:
       image: ${{ steps.image.outputs.image }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Log in to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
 
       - name: Build image
         id: image
@@ -65,7 +66,7 @@ jobs:
           echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
 
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: ${{ steps.image.outputs.image }}
           severity: "CRITICAL,HIGH"
@@ -78,6 +79,8 @@ jobs:
   update-manifest:
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # writes to observability-project1-gitops via GITOPS_PAT, not this repo's GITHUB_TOKEN
     # Gated by a GitHub Environment protection rule -- add required reviewers
     # to the "orders-backend-deploy" environment in repo Settings so this
     # pauses for approval instead of deploying immediately after build.
@@ -87,7 +90,7 @@ jobs:
       # (see that repo's applications/orders-backend.yaml), not here. GITOPS_PAT
       # is a fine-grained PAT scoped to write access on that repo only -- add it
       # under Settings -> Secrets and variables -> Actions in THIS repo.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: gayatriaavula/observability-project1-gitops
           ref: main
