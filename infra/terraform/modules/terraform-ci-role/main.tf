@@ -136,11 +136,32 @@ data "aws_iam_policy_document" "terraform_ci" {
       "iam:DeletePolicyVersion",
       "iam:ListPolicyVersions",
     ]
-    resources = [
-      "arn:aws:iam::*:role/${var.project}-eks-*",
-      "arn:aws:iam::*:instance-profile/${var.project}-eks-*",
-      "arn:aws:iam::*:policy/${var.project}-eks-*",
+    resources = concat(
+      [
+        "arn:aws:iam::*:role/${var.project}-eks-*",
+        "arn:aws:iam::*:instance-profile/${var.project}-eks-*",
+        "arn:aws:iam::*:policy/${var.project}-eks-*",
+      ],
+      var.additional_managed_role_arns,
+    )
+  }
+
+  # The EKS module manages a CloudWatch Log Group for cluster control plane
+  # logs, named by cluster_name so this stays within the ${project}-eks-*
+  # blast radius the rest of this policy also scopes to.
+  statement {
+    sid    = "EksClusterLogging"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:DescribeLogGroups",
+      "logs:PutRetentionPolicy",
+      "logs:TagResource",
+      "logs:UntagResource",
+      "logs:ListTagsForResource",
     ]
+    resources = ["arn:aws:logs:*:*:log-group:/aws/eks/${var.project}-eks-*"]
   }
 
   statement {

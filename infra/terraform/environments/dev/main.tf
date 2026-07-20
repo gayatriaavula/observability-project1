@@ -78,11 +78,12 @@ module "github_oidc" {
 module "terraform_ci_role" {
   source = "../../modules/terraform-ci-role"
 
-  oidc_provider_arn  = module.github_oidc.oidc_provider_arn
-  github_repo        = var.github_repo
-  github_environment = "infra-${var.environment}"
-  role_name          = "${local.name}-terraform-ci"
-  project            = var.project
+  oidc_provider_arn            = module.github_oidc.oidc_provider_arn
+  github_repo                  = var.github_repo
+  github_environment           = "infra-${var.environment}"
+  role_name                    = "${local.name}-terraform-ci"
+  project                      = var.project
+  additional_managed_role_arns = [module.eks.node_iam_role_arn]
 
   state_bucket_name = var.state_bucket_name
   lock_table_name   = var.lock_table_name

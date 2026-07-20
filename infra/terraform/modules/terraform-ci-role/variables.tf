@@ -43,3 +43,9 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "additional_managed_role_arns" {
+  description = "IAM roles this CI role needs to manage that fall outside the project-eks-* naming pattern -- e.g. the EKS node group's IAM role, which the upstream terraform-aws-modules/eks module names by its own convention (default-eks-node-group-<suffix>). Granted by exact ARN, never a wildcard, so this doesn't reopen the cross-project blast-radius the naming-pattern scoping exists to prevent."
+  type        = list(string)
+  default     = []
+}
