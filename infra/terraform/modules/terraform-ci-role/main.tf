@@ -175,6 +175,27 @@ data "aws_iam_policy_document" "terraform_ci" {
     resources = ["*"]
   }
 
+  # EKS's own OIDC provider (for IRSA) is a distinct resource from the
+  # GitHub Actions one below -- different issuer domain, created per
+  # cluster with an AWS-generated ID this role can't predict ahead of time.
+  # Scoped to the oidc.eks.*.amazonaws.com issuer domain rather than a
+  # specific provider ID; this role can already fully create/delete the EKS
+  # clusters these providers belong to via the Eks statement above, so this
+  # doesn't extend its reach any further than that already does.
+  statement {
+    sid    = "IamManageEksOidcProvider"
+    effect = "Allow"
+    actions = [
+      "iam:CreateOpenIDConnectProvider",
+      "iam:DeleteOpenIDConnectProvider",
+      "iam:GetOpenIDConnectProvider",
+      "iam:TagOpenIDConnectProvider",
+      "iam:UntagOpenIDConnectProvider",
+      "iam:UpdateOpenIDConnectProviderThumbprint",
+    ]
+    resources = ["arn:aws:iam::*:oidc-provider/oidc.eks.*.amazonaws.com/id/*"]
+  }
+
   statement {
     sid    = "IamManageOidcProvider"
     effect = "Allow"
