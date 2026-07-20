@@ -14,14 +14,20 @@ data "aws_iam_policy_document" "trust" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Pull requests authenticate with sub "repo:org/repo:pull_request" (no ref),
-    # so both patterns are needed: PRs run plan, pushes to github_ref run apply.
+    # Three distinct sub claim shapes, one per job type in infra.yml:
+    # - "pull_request" for the plan job (no environment/ref)
+    # - "ref:..." would apply to a push-triggered job with no `environment:`
+    # - "environment:..." for the apply job, which declares `environment:
+    #   infra-${matrix.environment}` for approval gating -- that changes the
+    #   token's sub claim shape entirely, so it needs its own condition value
+    #   rather than falling under the ref-based one above.
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
         "repo:${var.github_repo}:ref:${var.github_ref}",
         "repo:${var.github_repo}:pull_request",
+        "repo:${var.github_repo}:environment:${var.github_environment}",
       ]
     }
   }

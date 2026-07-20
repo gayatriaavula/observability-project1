@@ -14,6 +14,11 @@ variable "github_ref" {
   default     = "refs/heads/main"
 }
 
+variable "github_environment" {
+  description = "GitHub Environment name the apply job runs under (e.g. \"infra-dev\"). When a job declares `environment:`, its OIDC token's sub claim becomes \"repo:ORG/REPO:environment:NAME\" instead of the ref-based form, so this needs its own trust condition."
+  type        = string
+}
+
 variable "role_name" {
   description = "Name of the IAM role the infra CI pipeline assumes via OIDC"
   type        = string
