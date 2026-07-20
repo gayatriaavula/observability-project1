@@ -1,0 +1,96 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: platform-gateway
+  namespace: istio-ingress
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    # ArgoCD terminates its own TLS internally (server.insecure=false), so
+    # pass the raw TLS stream straight through instead of re-terminating it.
+    - port:
+        number: 8443
+        name: argocd-tls
+        protocol: TLS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - "*"
+    - port:
+        number: 3000
+        name: grafana-https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: api-company-com-tls
+      hosts:
+        - "*"
+    - port:
+        number: 9090
+        name: prometheus-https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: api-company-com-tls
+      hosts:
+        - "*"
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - istio-ingress/platform-gateway
+  tls:
+    - match:
+        - port: 8443
+          sniHosts:
+            - "*"
+      route:
+        - destination:
+            host: argocd-server.argocd.svc.cluster.local
+            port:
+              number: 443
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - istio-ingress/platform-gateway
+  http:
+    - match:
+        - port: 3000
+      route:
+        - destination:
+            host: kube-prometheus-stack-grafana.monitoring.svc.cluster.local
+            port:
+              number: 80
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - istio-ingress/platform-gateway
+  http:
+    - match:
+        - port: 9090
+      route:
+        - destination:
+            host: kube-prometheus-stack-prometheus.monitoring.svc.cluster.local
+            port:
+              number: 9090
