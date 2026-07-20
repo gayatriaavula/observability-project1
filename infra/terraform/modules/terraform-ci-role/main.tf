@@ -155,13 +155,24 @@ data "aws_iam_policy_document" "terraform_ci" {
     actions = [
       "logs:CreateLogGroup",
       "logs:DeleteLogGroup",
-      "logs:DescribeLogGroups",
       "logs:PutRetentionPolicy",
       "logs:TagResource",
       "logs:UntagResource",
       "logs:ListTagsForResource",
     ]
     resources = ["arn:aws:logs:*:*:log-group:/aws/eks/${var.project}-eks-*"]
+  }
+
+  # DescribeLogGroups is a list/discovery action -- CloudWatch Logs doesn't
+  # support authorizing it against a specific log group ARN (the API takes
+  # an optional name *prefix* to filter results after the fact, not as part
+  # of the IAM resource match), so unlike every other statement here this
+  # one can't be scoped tighter than "*".
+  statement {
+    sid       = "EksClusterLoggingDiscovery"
+    effect    = "Allow"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
   }
 
   statement {
