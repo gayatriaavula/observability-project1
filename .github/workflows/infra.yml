@@ -129,7 +129,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: [dev, prod]
+        # prod isn't deployed yet -- add it back here once it is (and once
+        # TERRAFORM_CI_ROLE_ARN_PROD exists, from that environment's own
+        # terraform_ci_role_arn output).
+        environment: [dev]
     # Gated by a GitHub Environment protection rule -- add required reviewers
     # to the "infra-dev" / "infra-prod" environments in repo Settings so apply
     # pauses for approval instead of running immediately on merge.
